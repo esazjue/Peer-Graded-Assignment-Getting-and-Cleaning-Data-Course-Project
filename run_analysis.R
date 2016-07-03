@@ -44,3 +44,20 @@ all <- rbind(test,train) #10299   564
 #Extracting only the measurements on the mean and standard deviation for each measurement. 
 tiny <- cbind(all[,1:3],all[, grepl("([m]ean|std)" ,names(all))] ) # 10299 82
 tiny %>% group_by(set,subject,activity) %>% mutate(sample = seq_len(n()) ) -> tiny  # 10299 83
+
+#Gathering data to convert columns with variables to rows
+gathered<- gather(tiny,domain_feature_measure_axis, value,-c(subject,set,activity,sample),na.rm=FALSE)
+
+#Renaming the feature name to have the substitute the add an underscore to the domain prefix
+gathered$domain_feature_measure_axis<- sub("^[t]","t_",sub("^[f]","f_",gathered$domain_feature_measure_axis))
+
+#Splitting the column "domain_feature_measure_axis" into four different columns
+tidy<- separate(data=gathered, col=domain_feature_measure_axis, into=c("domain","feature","measure","axis"))
+
+
+
+#Creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+averagedData<-summarise(group_by(tidy, activity,subject,domain,feature,measure,axis), mean(value))
+
+#Writing into a table as requested
+write.table(averagedData,file="UCI HAR Dataset - average.txt",row.name=FALSE)
